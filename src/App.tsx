@@ -1,0 +1,64 @@
+import { useEffect, useState } from 'react'
+import { getProducts, type Product } from './services/productService'
+import './interaction.css'
+
+const fallbackProducts: Product[] = [
+  { name: 'Nimbus Trail Runner', category: 'Running / Everyday', price: '₹4,299', oldPrice: '₹5,499', rating: '4.9', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85', tone: 'coral' },
+  { name: 'Arc Pro Headphones', category: 'Audio / Focus', price: '₹8,990', oldPrice: '₹10,490', rating: '4.8', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85', tone: 'blue' },
+  { name: 'Luma Weekender Pack', category: 'Travel / Carry', price: '₹3,750', rating: '4.7', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85', tone: 'sand' },
+  { name: 'Boreal Insulated Flask', category: 'Outdoor / Hydration', price: '₹1,299', oldPrice: '₹1,599', rating: '4.9', image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=900&q=85', tone: 'green' },
+]
+
+function App() {
+  const [query, setQuery] = useState('')
+  const [liked, setLiked] = useState<string[]>([])
+  const [cartCount, setCartCount] = useState(2)
+  const [assistantOpen, setAssistantOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [wishlistOpen, setWishlistOpen] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [products, setProducts] = useState<Product[]>(fallbackProducts)
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState(false)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getProducts(controller.signal)
+      .then((loadedProducts) => {
+        setProducts(loadedProducts)
+        setProductsError(false)
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setProductsError(true)
+      })
+      .finally(() => setProductsLoading(false))
+    return () => controller.abort()
+  }, [])
+  const toggleLiked = (name: string) => {
+    const isLiked = liked.includes(name)
+    setLiked((current) => isLiked ? current.filter((item) => item !== name) : [...current, name])
+    setFeedback(isLiked ? `${name} removed from wishlist` : `${name} saved to wishlist`)
+  }
+  const addToCart = (name: string) => { setCartCount((count) => count + 1); setFeedback(`${name} added to your bag`); setCartOpen(true) }
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setAssistantOpen(true); setFeedback(query ? `ShopSense is ready to explore “${query}”` : 'Tell ShopSense what you are looking for') }
+
+  return (
+    <div className="app-shell">
+      <div className="announcement">Free delivery on orders above ₹1,499 <span>·</span> Thoughtful picks, made simple</div>
+      <header className="nav-wrap"><a className="brand" href="#top" aria-label="ShopSense AI home"><span className="brand-mark">S</span><span>ShopSense <i>AI</i></span></a><nav className="main-nav" aria-label="Main navigation"><a href="#discover">Discover</a><a href="#collections">Collections</a><a href="#how-it-works">How it works</a></nav><div className="nav-actions"><button className="icon-button" aria-label="Search" onClick={() => document.getElementById('ai-search')?.focus()}>⌕</button><button className="icon-button" aria-label="Wishlist" onClick={() => setWishlistOpen(!wishlistOpen)}>♡<small>{liked.length}</small></button><button className="cart-button" aria-label="Shopping cart" onClick={() => setCartOpen(!cartOpen)}>Bag <b>{cartCount}</b></button><button className="avatar" aria-label="Account" onClick={() => setFeedback('Account sign-in is coming next')}>AR</button></div></header>
+      <main id="top"><section className="hero-section"><div className="hero-copy"><p className="eyebrow"><span className="eyebrow-dot" /> Curated by intelligence, chosen by you</p><h1>Shopping,<br /><em>but smarter.</em></h1><p className="hero-subtitle">Tell ShopSense what you need. Our AI finds the right fit from products worth bringing home.</p><form className="search-box" onSubmit={handleSearch}><span className="search-symbol">⌕</span><input id="ai-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “waterproof running shoes under ₹5,000”" aria-label="Describe what you are looking for" /><button type="submit">Ask AI <span>↗</span></button></form><div className="prompt-row"><span>Try asking:</span><button type="button" onClick={() => setQuery('A calm desk setup for deep focus')}>A calm desk setup for deep focus</button><button type="button" onClick={() => setQuery('Weekend essentials under ₹3,000')}>Weekend essentials under ₹3,000</button></div></div><div className="hero-art" aria-label="Featured collection preview"><div className="art-orbit orbit-one" /><div className="art-orbit orbit-two" /><div className="art-card art-card-main"><img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85" alt="Minimal black watch from the featured collection" /><span className="image-tag">01 / 04</span></div><div className="art-card art-card-float"><img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=500&q=85" alt="A curated camera accessory" /></div><div className="art-note"><strong>Editor's pick</strong><span>Objects with a point of view.</span></div></div></section>
+      <section className="trust-strip"><span>As seen in</span><strong>FORBES</strong><strong>hypebeast</strong><strong>VOGUE</strong><strong>WIRED</strong><span className="trust-caption">10k+ thoughtful shoppers already exploring smarter</span></section>
+      <section className="content-section" id="discover"><div className="section-heading"><div><p className="eyebrow">A little more personal</p><h2>Picked for your <em>now.</em></h2></div><button type="button" className="text-link" onClick={() => setFeedback('You are already viewing the latest curated products')}>View all products <span>↗</span></button></div>{productsLoading ? <div className="product-grid" aria-label="Loading products">{[1, 2, 3, 4].map((item) => <div className="product-card product-skeleton" key={item}><div className="product-image" /><div className="skeleton-line" /><div className="skeleton-line short" /></div>)}</div> : <><div className="product-status" role={productsError ? 'status' : undefined}>{productsError ? 'Live catalog unavailable. Showing the latest curated picks.' : `${products.length} products selected for you`}</div><div className="product-grid">{products.map((product) => <article className={`product-card ${product.tone}`} key={product.id || product.name}><div className="product-image"><img src={product.image} alt={product.name} loading="lazy" /><button type="button" className={`heart-button ${liked.includes(product.name) ? 'liked' : ''}`} aria-label={`Add ${product.name} to wishlist`} onClick={() => toggleLiked(product.name)}>{liked.includes(product.name) ? '♥' : '♡'}</button>{product.oldPrice && <span className="sale-label">Popular</span>}</div><div className="product-meta"><div><p className="product-category">{product.category}</p><button type="button" className="product-name-button" onClick={() => setFeedback(`${product.name} details are ready for the next catalog slice`)}><h3>{product.name}</h3></button></div><span className="rating">★ {product.rating}</span></div><div className="product-price"><strong>{product.price}</strong>{product.oldPrice && <del>{product.oldPrice}</del>}<button type="button" onClick={() => addToCart(product.name)} aria-label={`Add ${product.name} to cart`}>+</button></div></article>)}</div></>}</section>
+      <section className="split-section" id="how-it-works"><div className="split-visual"><div className="mini-window"><div className="mini-header"><span className="mini-avatar">✦</span><span>ShopSense AI</span><span className="online-dot" /></div><div className="chat-bubble">Looking for something<br />for slow Sunday mornings.</div><div className="chat-bubble ai-bubble">I found a few pieces<br />that feel like you.</div><div className="mini-products"><span>◌</span><span>▰</span><span>◒</span></div></div></div><div className="split-copy"><p className="eyebrow">A better way to browse</p><h2>Your taste,<br /><em>translated.</em></h2><p>Skip the filters and tell us how you want to feel. ShopSense connects the dots between your intent and products you’ll genuinely love.</p><ol className="steps"><li><b>01</b><span><strong>Say what you mean</strong><small>Natural language that feels, well, natural.</small></span></li><li><b>02</b><span><strong>We make sense of it</strong><small>Preferences become a considered shortlist.</small></span></li><li><b>03</b><span><strong>You make the call</strong><small>Always in control. Never overwhelmed.</small></span></li></ol><button className="dark-button" onClick={() => document.getElementById('ai-search')?.focus()}>Meet your shopping sidekick <span>↗</span></button></div></section>
+      <section className="category-section" id="collections"><div className="section-heading"><div><p className="eyebrow">Explore by feeling</p><h2>What are you <em>into?</em></h2></div></div><div className="category-grid"><a href="#discover" className="category-card category-tech"><span>01</span><strong>Into focus</strong><small>Tools for your best work</small></a><a href="#discover" className="category-card category-outdoor"><span>02</span><strong>Into the wild</strong><small>Go further, feel grounded</small></a><a href="#discover" className="category-card category-home"><span>03</span><strong>Into slow living</strong><small>Make space for the good stuff</small></a></div></section></main>
+      <footer className="footer"><div className="brand footer-brand"><span className="brand-mark">S</span><span>ShopSense <i>AI</i></span></div><p>The thoughtful way to shop online.</p><div className="footer-links"><a href="#discover">Shop</a><a href="#how-it-works">Our story</a><a href="#collections">Journal</a><button type="button" onClick={() => setFeedback('Follow ShopSense on Instagram')} >Instagram</button></div><small>© 2026 ShopSense AI. Made for better choices.</small></footer>
+      {feedback && <div className="feedback-toast" role="status"><span>✓</span>{feedback}<button type="button" onClick={() => setFeedback('')} aria-label="Dismiss notification">×</button></div>}
+      {cartOpen && <aside className="assistant-panel utility-panel" aria-label="Shopping bag"><div className="assistant-heading"><span className="assistant-icon">Bag</span><div><strong>Your bag</strong><small>{cartCount} items selected</small></div><button onClick={() => setCartOpen(false)} aria-label="Close bag">×</button></div><div className="assistant-message">Your curated picks are waiting here.</div><button className="dark-button panel-action" onClick={() => setFeedback('Checkout will be available with the order slice')}>View checkout <span>↗</span></button></aside>}
+      {wishlistOpen && <aside className="assistant-panel utility-panel wishlist-panel" aria-label="Wishlist"><div className="assistant-heading"><span className="assistant-icon">♡</span><div><strong>Your wishlist</strong><small>{liked.length} saved items</small></div><button onClick={() => setWishlistOpen(false)} aria-label="Close wishlist">×</button></div><div className="assistant-message">{liked.length ? liked.join(', ') : 'Tap a heart on a product to save it here.'}</div></aside>}
+      <button className={`assistant-trigger ${assistantOpen ? 'active' : ''}`} onClick={() => setAssistantOpen(!assistantOpen)} aria-label="Open ShopSense AI assistant"><span>✦</span>{assistantOpen ? 'Close' : 'Ask AI'}</button>{assistantOpen && <aside className="assistant-panel" aria-live="polite"><div className="assistant-heading"><span className="assistant-icon">✦</span><div><strong>ShopSense AI</strong><small>Your personal shopper</small></div><button onClick={() => setAssistantOpen(false)} aria-label="Close assistant">×</button></div><div className="assistant-message">{query ? `Let me explore thoughtful options for “${query}”.` : 'Tell me what you are looking for, and I’ll make the first edit.'}</div><div className="assistant-suggestions"><button onClick={() => setQuery('A gift for someone who has everything')}>A thoughtful gift idea</button><button onClick={() => setQuery('Comfortable travel essentials')}>Travel essentials</button></div><form className="assistant-input" onSubmit={handleSearch}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask me anything..." aria-label="Chat with ShopSense AI" /><button type="submit" aria-label="Send message">↗</button></form></aside>}
+    </div>
+  )
+}
+
+export default App

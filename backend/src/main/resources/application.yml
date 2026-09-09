@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: shopsense-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/shopsense}
+    username: ${DATABASE_USERNAME:shopsense}
+    password: ${DATABASE_PASSWORD:shopsense}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    default-property-inclusion: non_null
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+shopsense:
+  jwt:
+    secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+  cors:
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
