@@ -21,6 +21,10 @@ server {
     location /api/ {
         proxy_pass ${BACKEND_URL};
 
+        proxy_ssl_server_name on;
+        proxy_ssl_name shopsense-backend-dcrl.onrender.com;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
