@@ -13,9 +13,10 @@ FROM nginx:1.27-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Nginx will process ${BACKEND_URL} from this template at container startup
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker-entrypoint-render.sh /docker-entrypoint-render.sh
+
+RUN chmod +x /docker-entrypoint-render.sh
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint-render.sh"]
