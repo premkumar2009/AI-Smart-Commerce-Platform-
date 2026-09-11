@@ -17,6 +17,7 @@ services:
       DATABASE_PASSWORD: shopsense
       JWT_SECRET: ${JWT_SECRET:-change-this-development-secret-to-a-long-random-value}
       FRONTEND_URL: http://localhost:5173
+      PORT: 8080
     ports:
       - "8080:8080"
     depends_on:

@@ -2,9 +2,10 @@ spring:
   application:
     name: shopsense-api
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/shopsense}
-    username: ${DATABASE_USERNAME:shopsense}
-    password: ${DATABASE_PASSWORD:shopsense}
+    driver-class-name: ${DATABASE_DRIVER:org.h2.Driver}
+    url: ${DATABASE_URL:jdbc:h2:mem:shopsense;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,6 +13,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
   jackson:
     default-property-inclusion: non_null
 server:
@@ -23,4 +29,4 @@ shopsense:
     secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
   cors:
-    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173,http://127.0.0.1:5173}

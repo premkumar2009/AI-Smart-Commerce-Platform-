@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products", indexes = {@Index(name = "idx_products_slug", columnList = "slug"), @Index(name = "idx_products_category", columnList = "category_id")}, uniqueConstraints = @UniqueConstraint(name = "uk_products_sku", columnNames = "sku"))
+@Table(name = "products", indexes = {@Index(name = "idx_products_slug", columnList = "slug"), @Index(name = "idx_products_category", columnList = "category_id"), @Index(name = "idx_products_type", columnList = "product_type")}, uniqueConstraints = @UniqueConstraint(name = "uk_products_sku", columnNames = "sku"))
 public class Product {
     @Id @GeneratedValue(strategy = GenerationType.UUID) private UUID id;
     @Column(nullable = false, length = 180) private String name;
@@ -17,6 +17,7 @@ public class Product {
     @Column(nullable = false, precision = 12, scale = 2) private BigDecimal price;
     @Column(precision = 12, scale = 2) private BigDecimal discountPrice;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "category_id", nullable = false) private Category category;
+    @Column(name = "product_type", nullable = false, length = 100) private String productType = "General";
     @Column(nullable = false, precision = 3, scale = 2) private BigDecimal rating = BigDecimal.ZERO;
     @Column(nullable = false) private int reviewCount;
     @Column(nullable = false, length = 60) private String sku;
@@ -38,6 +39,7 @@ public class Product {
     public BigDecimal getPrice() { return price; } public void setPrice(BigDecimal value) { price = value; }
     public BigDecimal getDiscountPrice() { return discountPrice; } public void setDiscountPrice(BigDecimal value) { discountPrice = value; }
     public Category getCategory() { return category; } public void setCategory(Category value) { category = value; }
+    public String getProductType() { return productType; } public void setProductType(String value) { productType = value; }
     public BigDecimal getRating() { return rating; } public void setRating(BigDecimal value) { rating = value; }
     public int getReviewCount() { return reviewCount; } public void setReviewCount(int value) { reviewCount = value; }
     public String getSku() { return sku; } public void setSku(String value) { sku = value; }

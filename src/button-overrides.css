@@ -1,0 +1,30 @@
+button.add-to-bag {
+  min-width: 58px;
+  height: 32px;
+  padding: 0 11px;
+  background: #f4c542;
+  color: #c43d32;
+  border: 1px solid #f4c542;
+  outline: none;
+  font-size: 0;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+button.add-to-bag::after {
+  content: '+ Bag';
+  font-size: 11px;
+}
+
+button.add-to-bag:hover {
+  background: #ffd95f;
+  color: #a92f28;
+  border-color: #ffd95f;
+  box-shadow: 0 0 0 3px rgba(244, 197, 66, .2);
+}
+
+button.add-to-bag:focus-visible {
+  box-shadow: 0 0 0 3px rgba(244, 197, 66, .34);
+}

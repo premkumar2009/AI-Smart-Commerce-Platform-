@@ -1,13 +1,15 @@
 # ShopSense AI
 
-ShopSense AI is a thoughtful e-commerce experience that turns natural-language intent into confident product discovery. This repository contains the Phase 1 foundation: a polished responsive React storefront, a Spring Boot authentication API, PostgreSQL wiring, Docker services, and architecture documentation.
+ShopSense AI is a recruiter-ready AI commerce platform with a live 12-category catalog, dependent filters, grounded product discovery, cart, wishlist, checkout, orders, reviews, and admin workflows.
 
 ## Product direction
 
 - AI-first discovery with natural language prompts
 - Curated product browsing and recommendation surfaces
 - Responsive, accessible customer experience
-- Secure backend boundary ready for catalog, cart, orders, and admin features
+- Cascading category, product type, and brand filters sourced from real products
+- Grounded AI search, assistant, recommendations, similar products, comparison, and budget bundles
+- JWT authentication with customer and admin roles
 
 ## Stack
 
@@ -21,10 +23,29 @@ React + TypeScript + Vite, Spring Boot 3, Java 21, Spring Security, JWT, BCrypt,
 4. Run the backend from `backend/` with `mvn spring-boot:run`.
 5. Open `http://localhost:5173` for the storefront and `http://localhost:8080/swagger-ui/index.html` for API docs.
 
+## Catalog
+
+The seed contains exactly 12 canonical categories, 10 product types per category, and at least three real catalog products per type. Product type previews use three distinct stored product images. Brands are derived from the selected category and type.
+
+## AI examples
+
+- `best headphones under 10000`
+- `Samsung smartphone under 30000`
+- `dog food for puppies`
+- `laptop for coding under 70000`
+
+AI responses are grounded in database product records and return the stored product image and link.
+
+## Environment
+
+Use `.env.example` for `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `FRONTEND_URL`, `GEMINI_API_KEY`, and `VITE_DEMO_MODE`. Set `VITE_DEMO_MODE=false` for production deployments.
+
 ## Verification
 
 - Frontend build: `npm run build`
 - Frontend lint: `npm run lint`
-- Backend package: `cd backend && mvn -q -DskipTests package`
+- Backend tests: `cd backend && mvn clean test`
+- Backend package: `cd backend && mvn clean package`
+- Docker: `docker compose build && docker compose up`
 
 See [docs/architecture.md](docs/architecture.md) and [docs/api.md](docs/api.md) for current contracts. Gemini keys belong only in backend environment variables and are intentionally not used by browser code.
