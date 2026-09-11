@@ -47,6 +47,9 @@ export type ApiProduct = {
 export type ProductFilters = { search?: string; category?: string; type?: string; brand?: string; minPrice?: string; maxPrice?: string; minRating?: string; inStock?: boolean; outOfStock?: boolean; page: number; size: number; sort: string; direction: string }
 export type ProductPage = { content: ApiProduct[]; totalElements: number; totalPages: number; number: number; size: number }
 
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : 'http://localhost:8080')).replace(/\/$/, '')
+export const apiUrl = (path: string) => `${API_BASE_URL}${path}`
+
 const formatPrice = (value: number) => `₹${value.toLocaleString('en-IN')}`
 let demoSessionPromise: Promise<string | null> | null = null
 
@@ -85,7 +88,7 @@ export const getAuthHeaders = (includeJson = false) => {
 export type AuthResponse = { token: string; tokenType: string; userId: string; email: string; firstName: string; role: string }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
-  const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+  const response = await fetch(apiUrl('/api/auth/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
   if (!response.ok) throw new Error('Invalid email or password')
   const data = await response.json() as AuthResponse
   localStorage.setItem('shopsense-token', data.token)
@@ -94,7 +97,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
 }
 
 export async function register(firstName: string, lastName: string, email: string, password: string): Promise<AuthResponse> {
-  const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName, lastName, email, password }) })
+  const response = await fetch(apiUrl('/api/auth/register'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName, lastName, email, password }) })
   if (!response.ok) throw new Error(response.status === 409 ? 'An account with this email already exists' : 'Unable to create your account')
   const data = await response.json() as AuthResponse
   localStorage.setItem('shopsense-token', data.token)
@@ -116,7 +119,7 @@ export async function ensureDemoSession(): Promise<string | null> {
   demoSessionPromise = (async () => {
     if (saved) {
       try {
-        const response = await fetch('/api/cart', { headers: { Authorization: `Bearer ${saved}` } })
+        const response = await fetch(apiUrl('/api/cart'), { headers: { Authorization: `Bearer ${saved}` } })
         if (response.ok) return saved
       } catch {
         return saved
@@ -125,7 +128,7 @@ export async function ensureDemoSession(): Promise<string | null> {
       localStorage.removeItem('shopsense-user')
     }
 
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'demo@shopsense.ai', password: 'DemoPass!23' }),
@@ -150,21 +153,21 @@ export async function ensureDemoSession(): Promise<string | null> {
 export async function getProducts(filters: Partial<ProductFilters> = {}, signal?: AbortSignal): Promise<{ products: Product[]; totalElements: number; totalPages: number; page: number }> {
   const params = new URLSearchParams({ page: String(filters.page ?? 0), size: String(filters.size ?? 12), sort: filters.sort || 'createdAt', direction: filters.direction || 'desc' })
   Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== '' && !['page', 'size', 'sort', 'direction'].includes(key)) params.set(key, String(value)) })
-  const response = await fetch(`/api/products?${params.toString()}`, { signal })
+  const response = await fetch(apiUrl(`/api/products?${params.toString()}`), { signal })
   if (!response.ok) throw new Error('Unable to load products')
   const page = await response.json() as ProductPage
   return { products: page.content.map(mapProduct), totalElements: page.totalElements, totalPages: page.totalPages, page: page.number }
 }
 
 export async function getBrands(signal?: AbortSignal): Promise<string[]> {
-  const response = await fetch('/api/products/brands', { signal })
+  const response = await fetch(apiUrl('/api/products/brands'), { signal })
   if (!response.ok) throw new Error('Unable to load brands')
   return response.json() as Promise<string[]>
 }
 
 export type ProductTypeSummary = { name: string; productCount: number; images: string[] }
 export async function getProductTypes(category: string, signal?: AbortSignal): Promise<ProductTypeSummary[]> {
-  const response = await fetch(`/api/products/types?category=${encodeURIComponent(category)}`, { signal })
+  const response = await fetch(apiUrl(`/api/products/types?category=${encodeURIComponent(category)}`), { signal })
   if (!response.ok) throw new Error('Unable to load product types')
   return response.json() as Promise<ProductTypeSummary[]>
 }
@@ -172,7 +175,7 @@ export async function getProductTypes(category: string, signal?: AbortSignal): P
 export async function getTypeBrands(category: string, type?: string, signal?: AbortSignal): Promise<string[]> {
   const params = new URLSearchParams({ category })
   if (type) params.set('type', type)
-  const response = await fetch(`/api/products/brands?${params.toString()}`, { signal })
+  const response = await fetch(apiUrl(`/api/products/brands?${params.toString()}`), { signal })
   if (!response.ok) throw new Error('Unable to load type brands')
   return response.json() as Promise<string[]>
 }
@@ -182,7 +185,7 @@ export type Cart = { items: CartItem[]; subtotal: number; shipping: number; tota
 
 export async function addCartItem(productId: string, quantity = 1): Promise<Cart> {
   await ensureDemoSession()
-  const request = () => fetch('/api/cart/items', {
+  const request = () => fetch(apiUrl('/api/cart/items'), {
     method: 'POST',
     headers: { ...getAuthHeaders(true) },
     body: JSON.stringify({ productId, quantity }),
@@ -200,27 +203,27 @@ export async function addCartItem(productId: string, quantity = 1): Promise<Cart
 
 export async function getCart(): Promise<Cart> {
   await ensureDemoSession()
-  const response = await fetch('/api/cart', { headers: getAuthHeaders() })
+  const response = await fetch(apiUrl('/api/cart'), { headers: getAuthHeaders() })
   if (!response.ok) throw new Error(response.status === 401 ? 'Please sign in to view your bag.' : 'Unable to load your bag')
   return response.json() as Promise<Cart>
 }
 
 export async function updateCartItem(itemId: string, quantity: number): Promise<Cart> {
   await ensureDemoSession()
-  const response = await fetch(`/api/cart/items/${itemId}`, { method: 'PUT', headers: { ...getAuthHeaders(true) }, body: JSON.stringify({ quantity }) })
+  const response = await fetch(apiUrl(`/api/cart/items/${itemId}`), { method: 'PUT', headers: { ...getAuthHeaders(true) }, body: JSON.stringify({ quantity }) })
   if (!response.ok) throw new Error('Unable to update item quantity')
   return response.json() as Promise<Cart>
 }
 
 export async function removeCartItem(itemId: string): Promise<void> {
   await ensureDemoSession()
-  const response = await fetch(`/api/cart/items/${itemId}`, { method: 'DELETE', headers: getAuthHeaders() })
+  const response = await fetch(apiUrl(`/api/cart/items/${itemId}`), { method: 'DELETE', headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to remove item from bag')
 }
 
 export async function clearCart(): Promise<void> {
   await ensureDemoSession()
-  const response = await fetch('/api/cart', { method: 'DELETE', headers: getAuthHeaders() })
+  const response = await fetch(apiUrl('/api/cart'), { method: 'DELETE', headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to clear bag')
 }
 
@@ -229,14 +232,14 @@ export type WishlistResponse = { items: WishlistItem[]; itemCount: number }
 
 export async function getWishlist(): Promise<WishlistResponse> {
   await ensureDemoSession()
-  const response = await fetch('/api/wishlist', { headers: getAuthHeaders() })
+  const response = await fetch(apiUrl('/api/wishlist'), { headers: getAuthHeaders() })
   if (!response.ok) throw new Error(response.status === 401 ? 'Please sign in to view your wishlist.' : 'Unable to load wishlist')
   return response.json() as Promise<WishlistResponse>
 }
 
 export async function addWishlistItem(productId: string): Promise<WishlistResponse> {
   await ensureDemoSession()
-  const response = await fetch('/api/wishlist', {
+  const response = await fetch(apiUrl('/api/wishlist'), {
     method: 'POST',
     headers: { ...getAuthHeaders(true) },
     body: JSON.stringify({ productId }),
@@ -247,20 +250,20 @@ export async function addWishlistItem(productId: string): Promise<WishlistRespon
 
 export async function removeWishlistItem(productId: string): Promise<void> {
   await ensureDemoSession()
-  const response = await fetch(`/api/wishlist/products/${productId}`, { method: 'DELETE', headers: getAuthHeaders() })
+  const response = await fetch(apiUrl(`/api/wishlist/products/${productId}`), { method: 'DELETE', headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to remove item from wishlist')
 }
 
 export type Review = { id: string; productId: string; userName: string; rating: number; reviewText: string; createdAt: string }
 export type ReviewSummary = { averageRating: number; reviewCount: number; reviews: Review[] }
 export async function getProductReviews(productId: string): Promise<ReviewSummary> {
-  const response = await fetch(`/api/products/${productId}/reviews`)
+  const response = await fetch(apiUrl(`/api/products/${productId}/reviews`))
   if (!response.ok) throw new Error('Unable to load reviews')
   return response.json() as Promise<ReviewSummary>
 }
 
 export async function createReview(productId: string, rating: number, reviewText: string): Promise<Review> {
-  const response = await fetch('/api/reviews', {
+  const response = await fetch(apiUrl('/api/reviews'), {
     method: 'POST',
     headers: { ...getAuthHeaders(true) },
     body: JSON.stringify({ productId, rating, reviewText }),
@@ -271,7 +274,7 @@ export async function createReview(productId: string, rating: number, reviewText
 
 export type AiSearchResponse = { criteria: { category?: string; maxPrice?: number; minPrice?: number; minRating?: number; keywords?: string[] }; products: ApiProduct[]; explanation: string; aiEnhanced: boolean }
 export async function searchAi(query: string): Promise<AiSearchResponse> {
-  const response = await fetch('/api/ai/search', {
+  const response = await fetch(apiUrl('/api/ai/search'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query }),
@@ -281,7 +284,7 @@ export async function searchAi(query: string): Promise<AiSearchResponse> {
 }
 
 export async function askAiAssistant(query: string): Promise<{ answer: string; products: ApiProduct[]; suggestedQueries: string[] }> {
-  const response = await fetch('/api/ai/assistant', {
+  const response = await fetch(apiUrl('/api/ai/assistant'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query }),
@@ -291,7 +294,7 @@ export async function askAiAssistant(query: string): Promise<{ answer: string; p
 }
 
 export async function getAiRecommendations(category: string, query: string, productId?: string, limit = 4): Promise<{ products: ApiProduct[]; explanation: string }> {
-  const response = await fetch('/api/ai/recommendations', {
+  const response = await fetch(apiUrl('/api/ai/recommendations'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ category, query, productId, limit }),
@@ -301,7 +304,7 @@ export async function getAiRecommendations(category: string, query: string, prod
 }
 
 export async function getAiSimilar(productId: string, limit = 4): Promise<{ products: ApiProduct[]; explanation: string }> {
-  const response = await fetch('/api/ai/similar', {
+  const response = await fetch(apiUrl('/api/ai/similar'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ productId, limit }),
@@ -311,7 +314,7 @@ export async function getAiSimilar(productId: string, limit = 4): Promise<{ prod
 }
 
 export async function getAiCompare(productIds: string[]): Promise<{ bestProductId?: string; bestValueId?: string; summary: string; products: ApiProduct[] }> {
-  const response = await fetch('/api/ai/compare', {
+  const response = await fetch(apiUrl('/api/ai/compare'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ productIds }),
@@ -321,7 +324,7 @@ export async function getAiCompare(productIds: string[]): Promise<{ bestProductI
 }
 
 export async function getAiBudget(query: string, limit = 4): Promise<{ products: ApiProduct[]; total: number; budget?: number; explanation: string }> {
-  const response = await fetch('/api/ai/budget', {
+  const response = await fetch(apiUrl('/api/ai/budget'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, limit }),
@@ -335,7 +338,7 @@ export type ShippingDetails = { fullName: string; phone: string; address: string
 export type Order = { id: string; status: string; createdAt: string; subtotal: number; shipping: number; total: number; itemCount: number; shippingDetails: ShippingDetails; items: OrderItem[] }
 
 export async function createOrder(shipping: ShippingDetails): Promise<Order> {
-  const response = await fetch('/api/orders', {
+  const response = await fetch(apiUrl('/api/orders'), {
     method: 'POST',
     headers: { ...getAuthHeaders(true) },
     body: JSON.stringify({ shipping }),
@@ -345,30 +348,30 @@ export async function createOrder(shipping: ShippingDetails): Promise<Order> {
 }
 
 export async function getOrders(): Promise<Order[]> {
-  const response = await fetch('/api/orders', { headers: getAuthHeaders() })
+  const response = await fetch(apiUrl('/api/orders'), { headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to load order history')
   return response.json() as Promise<Order[]>
 }
 
 export async function getOrder(orderId: string): Promise<Order> {
-  const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, { headers: getAuthHeaders() })
+  const response = await fetch(apiUrl(`/api/orders/${encodeURIComponent(orderId)}`), { headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to load order details')
   return response.json() as Promise<Order>
 }
 
 export async function getAdminOrders(): Promise<Order[]> {
-  const response = await fetch('/api/admin/orders', { headers: getAuthHeaders() })
+  const response = await fetch(apiUrl('/api/admin/orders'), { headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to load admin orders')
   return response.json() as Promise<Order[]>
 }
 
 export async function getAdminProducts(): Promise<ProductPage> {
-  const response = await fetch('/api/products?page=0&size=50&sort=createdAt&direction=desc')
+  const response = await fetch(apiUrl('/api/products?page=0&size=50&sort=createdAt&direction=desc'))
   if (!response.ok) throw new Error('Unable to load admin products')
   return response.json() as Promise<ProductPage>
 }
 
 export async function deleteAdminProduct(productId: string): Promise<void> {
-  const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, { method: 'DELETE', headers: getAuthHeaders() })
+  const response = await fetch(apiUrl(`/api/products/${encodeURIComponent(productId)}`), { method: 'DELETE', headers: getAuthHeaders() })
   if (!response.ok) throw new Error('Unable to delete product')
 }

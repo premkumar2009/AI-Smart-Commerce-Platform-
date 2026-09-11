@@ -10,6 +10,7 @@ import {
   getProducts,
   getOrders,
   getProductReviews,
+  apiUrl,
   mapProduct,
   type ApiProduct,
   type Order,
@@ -319,7 +320,7 @@ export function ComparePage() {
     const selectedIds = (new URLSearchParams(params.toString()).get('ids') || '').split(',').filter(Boolean).slice(0, 3)
     if (!selectedIds.length) return
 
-    void Promise.all(selectedIds.map((id) => fetch(`/api/products/${encodeURIComponent(id)}`).then((response) => response.ok ? response.json() as Promise<ApiProduct> : Promise.reject())))
+    void Promise.all(selectedIds.map((id) => fetch(apiUrl(`/api/products/${encodeURIComponent(id)}`)).then((response) => response.ok ? response.json() as Promise<ApiProduct> : Promise.reject())))
       .then((result) => {
         const mappedProducts = result.map((item) => mapProduct(item, 0))
         setProducts(mappedProducts)
@@ -425,7 +426,7 @@ export function ProductDetailsPage() {
   const [reviewRating, setReviewRating] = useState(5)
 
   useEffect(() => {
-    fetch(`/api/products/slug/${encodeURIComponent(slug)}`)
+    fetch(apiUrl(`/api/products/slug/${encodeURIComponent(slug)}`))
       .then((response) => (response.ok ? response.json() as Promise<ApiProduct> : Promise.reject()))
       .then(async (data) => {
         const mapped = mapProduct(data, 0)
