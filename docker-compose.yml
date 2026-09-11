@@ -9,6 +9,7 @@ services:
       - "5432:5432"
     volumes:
       - shopsense-data:/var/lib/postgresql/data
+
   backend:
     build: ./backend
     environment:
@@ -19,14 +20,18 @@ services:
       FRONTEND_URL: http://localhost:5173
       PORT: 8080
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       - postgres
+
   frontend:
     build: .
+    environment:
+      BACKEND_URL: http://backend:8080
     ports:
       - "5173:80"
     depends_on:
       - backend
+
 volumes:
   shopsense-data:
