@@ -1,7 +1,10 @@
 #!/bin/sh
 set -eu
 
-: "${BACKEND_URL:?BACKEND_URL environment variable is required}"
+if [ -z "${BACKEND_URL:-}" ]; then
+    echo "ERROR: BACKEND_URL environment variable is required"
+    exit 1
+fi
 
 cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
